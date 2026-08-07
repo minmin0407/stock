@@ -18,25 +18,3 @@
     }
   ]
 }
-{
-  "probe": 12345
-}{
-  "name": "法人籌碼｜投信外資買賣超",
-  "short_name": "法人籌碼",
-  "description": "台股投信、外資每日買賣超前十大，含連續買賣超天數。",
-  "start_url": ".",
-  "scope": ".",
-  "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#0f1419",
-  "theme_color": "#0f1419",
-  "lang": "zh-Hant",
-  "icons": [
-    {
-      "src": "icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
-  ]
-}
