@@ -33,6 +33,7 @@ import os
 import re
 import sys
 import time
+import urllib.error
 import urllib.request
 
 # ---------------------------------------------------------------- 設定
@@ -83,7 +84,14 @@ def to_int(s):
         return 0
 
 
-def http_get_json(url, timeout=40):
+RETRY_CODES = (429, 500, 502, 503, 504, 520, 521, 522, 524)
+
+
+def http_get_json(url, timeout=40, retries=2):
+    """
+    取得 JSON。遇到暫時性錯誤（Cloudflare 520 之類）會自動重試。
+    櫃買中心的 520 相當常見，不重試的話大約 1 成的日期會漏掉上櫃資料。
+    """
     req = urllib.request.Request(url, headers={
         "User-Agent": USER_AGENT,
         "Accept": "application/json, text/plain, */*",
@@ -91,14 +99,27 @@ def http_get_json(url, timeout=40):
         "Accept-Encoding": "gzip",
         "Referer": "https://www.twse.com.tw/" if "twse" in url else "https://www.tpex.org.tw/",
     })
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
-        raw = resp.read()
-        if resp.headers.get("Content-Encoding") == "gzip":
-            raw = gzip.GzipFile(fileobj=io.BytesIO(raw)).read()
-    text = raw.decode("utf-8-sig", errors="replace").strip()
-    if not text:
-        raise ValueError("回應為空")
-    return json.loads(text)
+    last = None
+    for attempt in range(retries + 1):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                raw = resp.read()
+                if resp.headers.get("Content-Encoding") == "gzip":
+                    raw = gzip.GzipFile(fileobj=io.BytesIO(raw)).read()
+            text = raw.decode("utf-8-sig", errors="replace").strip()
+            if not text:
+                raise ValueError("回應為空")
+            return json.loads(text)
+        except urllib.error.HTTPError as e:
+            last = e
+            if e.code not in RETRY_CODES or attempt == retries:
+                raise
+        except (urllib.error.URLError, TimeoutError, ValueError) as e:
+            last = e
+            if attempt == retries:
+                raise
+        time.sleep(2.0 * (attempt + 1))    # 2 秒、4 秒後再試
+    raise last
 
 
 def is_common_stock(code):
