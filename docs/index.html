@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1419">
+<meta name="description" content="台股投信、外資每日買賣超前十大，含連續買賣超天數。資料來自證交所與櫃買中心公開資訊。">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="法人籌碼">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f1419'/%3E%3Cpath d='M14 44V30h8v14zm13 0V20h8v24zm13 0V26h8v18z' fill='%23ff5b5b'/%3E%3C/svg%3E">
+<title>法人籌碼｜投信外資買賣超前十</title>
+<style>
+:root{
+  --bg:#0f1419; --panel:#171d24; --panel2:#1c242d; --line:#2a343f; --line2:#374654;
+  --text:#e6edf3; --dim:#8b98a5; --dim2:#6b7885;
+  --buy:#ff5b5b; --sell:#26c281; --accent:#4aa8ff;
+  --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Microsoft JhengHei","PingFang TC","Noto Sans TC",system-ui,sans-serif;
+  font-size:15px;line-height:1.5;-webkit-text-size-adjust:100%;
+  padding-bottom:calc(28px + var(--safe-b));
+}
+.shell{max-width:1180px;margin:0 auto}
+
+/* ---------- 頁首 ---------- */
+header{
+  position:sticky;top:0;z-index:20;background:rgba(15,20,25,.94);
+  backdrop-filter:saturate(160%) blur(12px);border-bottom:1px solid var(--line);
+  padding:calc(12px + var(--safe-t)) 16px 0;
+}
+.hrow{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+h1{margin:0;font-size:18px;font-weight:600;letter-spacing:.3px}
+.meta{color:var(--dim);font-size:12px}
+.meta b{color:var(--text);font-weight:600}
+
+.datebar{display:flex;align-items:center;gap:8px;padding-bottom:10px}
+.navbtn{
+  flex:0 0 auto;width:34px;height:34px;border:1px solid var(--line2);border-radius:8px;
+  background:var(--panel);color:var(--text);font-size:16px;line-height:1;cursor:pointer;
+  display:flex;align-items:center;justify-content:center
+}
+.navbtn:disabled{opacity:.3;cursor:default}
+.navbtn:active:not(:disabled){background:var(--panel2)}
+select{
+  flex:1 1 auto;min-width:0;height:34px;padding:0 10px;border-radius:8px;
+  border:1px solid var(--line2);background:var(--panel);color:var(--text);
+  font-size:14px;font-family:inherit;
+}
+.today{
+  flex:0 0 auto;height:34px;padding:0 12px;border-radius:8px;border:1px solid var(--line2);
+  background:var(--panel);color:var(--dim);font-size:13px;cursor:pointer;font-family:inherit
+}
+.today:active{background:var(--panel2)}
+
+.tabs{display:flex;gap:0;border-top:1px solid var(--line)}
+.tab{
+  flex:1;padding:11px 4px;text-align:center;font-size:14px;color:var(--dim);
+  cursor:pointer;user-select:none;border-bottom:2px solid transparent
+}
+.tab.on{color:var(--text);font-weight:600;border-bottom-color:var(--accent)}
+
+/* ---------- 內容 ---------- */
+main{padding:14px 16px 0}
+.grid{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:900px){.grid.two{grid-template-columns:1fr 1fr}}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.card h2{
+  margin:0;padding:11px 14px;font-size:14px;font-weight:600;
+  border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px
+}
+.dot{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
+
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:9px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--dim);font-weight:400;font-size:12px;cursor:pointer;user-select:none}
+th:active{color:var(--text)}
+.arw{color:var(--accent);font-size:9px;margin-left:3px;vertical-align:1px}
+th.l,td.l{text-align:left}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:active{background:var(--panel2)}
+.nm{font-size:14px}
+.code{color:var(--dim2);font-size:11.5px;font-variant-numeric:tabular-nums;display:block;margin-top:1px}
+.num{font-variant-numeric:tabular-nums;font-weight:600}
+.buy{color:var(--buy)} .sell{color:var(--sell)}
+.mk{
+  display:inline-block;padding:0 5px;border-radius:3px;font-size:10.5px;
+  background:#243040;color:var(--dim);margin-left:5px;vertical-align:1px
+}
+.streak{font-size:12px;padding:2px 7px;border-radius:10px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.streak.b{background:rgba(255,91,91,.15);color:var(--buy)}
+.streak.s{background:rgba(38,194,129,.15);color:var(--sell)}
+.streak.n{color:var(--dim2)}
+.sparkcol{display:none}
+@media(min-width:620px){.sparkcol{display:table-cell}}
+
+.state{padding:40px 20px;text-align:center;color:var(--dim);font-size:14px}
+.hint{color:var(--dim2);font-size:11.5px;padding:14px 2px 0;line-height:1.7}
+footer{
+  margin-top:22px;padding:16px;border-top:1px solid var(--line);
+  color:var(--dim2);font-size:11.5px;line-height:1.7
+}
+footer a{color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<header>
+  <div class="hrow">
+    <h1>法人籌碼</h1>
+    <span class="meta" id="meta"></span>
+  </div>
+  <div class="datebar">
+    <button class="navbtn" id="prev" aria-label="前一個交易日">‹</button>
+    <select id="dateSel" aria-label="選擇交易日"></select>
+    <button class="navbtn" id="next" aria-label="後一個交易日">›</button>
+    <button class="today" id="latest">最新</button>
+  </div>
+  <div class="tabs" id="tabs">
+    <div class="tab on" data-v="trust">投信</div>
+    <div class="tab" data-v="foreign">外資</div>
+    <div class="tab" data-v="both">對照</div>
+  </div>
+</header>
+
+<main>
+  <div class="grid" id="grid"><div class="state">載入中…</div></div>
+  <div class="hint" id="hint"></div>
+</main>
+
+<footer>
+  資料來源：<a href="https://www.twse.com.tw/" target="_blank" rel="noopener">臺灣證券交易所</a>、<a href="https://www.tpex.org.tw/" target="_blank" rel="noopener">證券櫃檯買賣中心</a>公開資訊，每個交易日盤後自動更新。已排除 ETF 與非普通股。<br>
+  外資 = 外陸資（不含外資自營商）+ 外資自營商，與多數看盤軟體口徑一致。<br>
+  本頁僅為公開資訊彙整，不構成任何投資建議。法人買賣超為落後指標，投信作帳與外資避險部位都可能使數字失真。
+</footer>
+
+</div>
+
+<script>
+"use strict";
+
+var IDX = null, BOARD = null, VIEW = "trust", SORT = {}, CUR = null;
+
+function fmt(n){ return Math.round(n/1000).toLocaleString("zh-TW"); }
+function cls(n){ return n > 0 ? "buy" : (n < 0 ? "sell" : ""); }
+function esc(s){ return String(s).replace(/[&<>"]/g, function(c){
+  return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
+
+function streakHtml(n){
+  if(!n) return '<span class="streak n">–</span>';
+  var a = Math.abs(n);
+  if(a < 2) return '<span class="streak n">1</span>';
+  return '<span class="streak ' + (n>0?"b":"s") + '">' + (n>0?"連"+a+"買":"連"+a+"賣") + '</span>';
+}
+
+function spark(code, key){
+  var h = BOARD.history[code];
+  if(!h || h.length < 2) return "";
+  var vals = h.map(function(p){ return key === "trust" ? p.t : p.f; });
+  var max = Math.max.apply(null, vals.map(Math.abs)) || 1;
+  var w = 72, hh = 20, bw = w / vals.length, out = "";
+  for(var i = 0; i < vals.length; i++){
+    var v = vals[i];
+    var bh = Math.max(1, Math.abs(v) / max * (hh / 2));
+    var y = v >= 0 ? hh/2 - bh : hh/2;
+    out += '<rect x="' + (i*bw).toFixed(1) + '" y="' + y.toFixed(1) +
+           '" width="' + (bw-0.8).toFixed(1) + '" height="' + bh.toFixed(1) +
+           '" fill="' + (v >= 0 ? "#ff5b5b" : "#26c281") + '" opacity=".85"/>';
+  }
+  return '<svg width="' + w + '" height="' + hh + '" viewBox="0 0 ' + w + ' ' + hh +
+         '" aria-hidden="true"><line x1="0" y1="' + hh/2 + '" x2="' + w + '" y2="' + hh/2 +
+         '" stroke="#2a343f"/>' + out + '</svg>';
+}
+
+function card(title, color, rows, key, id, baseDir){
+  if(!rows || !rows.length){
+    return '<div class="card"><h2><span class="dot" style="background:' + color + '"></span>' +
+           title + '</h2><div class="state">當日無資料</div></div>';
+  }
+  var sk = key + "Streak", data = rows.slice();
+
+  // 資料進來時已依買賣超排好序。把這個「隱含排序」記下來，
+  // 使用者第一次點該欄位才會真的翻轉，而不是看起來沒反應。
+  if(!SORT[id]) SORT[id] = {col: key, dir: baseDir};
+  var s = SORT[id];
+
+  data.sort(function(a, b){
+    var va = s.col === "name" ? a.name : a[s.col];
+    var vb = s.col === "name" ? b.name : b[s.col];
+    return s.dir * (typeof va === "string" ? va.localeCompare(vb) : va - vb);
+  });
+
+  function arrow(col){
+    return s.col === col ? '<span class="arw">' + (s.dir < 0 ? "▼" : "▲") + '</span>' : "";
+  }
+
+  var body = data.map(function(r){
+    return '<tr>' +
+      '<td class="l"><span class="nm">' + esc(r.name) + '<span class="mk">' + r.market + '</span></span>' +
+      '<span class="code">' + r.code + '</span></td>' +
+      '<td class="num ' + cls(r[key]) + '">' + fmt(r[key]) + '</td>' +
+      '<td>' + streakHtml(r[sk]) + '</td>' +
+      '<td class="sparkcol">' + spark(r.code, key) + '</td></tr>';
+  }).join("");
+  return '<div class="card"><h2><span class="dot" style="background:' + color + '"></span>' +
+    title + '</h2><table><thead><tr>' +
+      '<th class="l" data-id="' + id + '" data-col="name">股票' + arrow("name") + '</th>' +
+      '<th data-id="' + id + '" data-col="' + key + '">買賣超(張)' + arrow(key) + '</th>' +
+      '<th data-id="' + id + '" data-col="' + sk + '">連續' + arrow(sk) + '</th>' +
+      '<th class="sparkcol" style="cursor:default">近20日</th>' +
+    '</tr></thead><tbody>' + body + '</tbody></table></div>';
+}
+
+function render(){
+  var g = document.getElementById("grid");
+  if(!BOARD){ g.innerHTML = '<div class="state">載入中…</div>'; return; }
+  var b = BOARD.boards, html, two = false;
+
+  if(VIEW === "trust"){
+    html = card("投信買超前十", "#ff5b5b", b.trustBuy, "trust", "tb", -1) +
+           card("投信賣超前十", "#26c281", b.trustSell, "trust", "ts", 1);
+    two = true;
+  } else if(VIEW === "foreign"){
+    html = card("外資買超前十", "#ff5b5b", b.foreignBuy, "foreign", "fb", -1) +
+           card("外資賣超前十", "#26c281", b.foreignSell, "foreign", "fs", 1);
+    two = true;
+  } else {
+    html = card("投信買超前十", "#ff5b5b", b.trustBuy, "trust", "tb", -1) +
+           card("外資買超前十", "#ff5b5b", b.foreignBuy, "foreign", "fb", -1) +
+           card("投信賣超前十", "#26c281", b.trustSell, "trust", "ts", 1) +
+           card("外資賣超前十", "#26c281", b.foreignSell, "foreign", "fs", 1);
+    two = true;
+  }
+  g.className = "grid" + (two ? " two" : "");
+  g.innerHTML = html;
+
+  Array.prototype.forEach.call(g.querySelectorAll("th[data-col]"), function(th){
+    th.onclick = function(){
+      var id = th.dataset.id, col = th.dataset.col, cur = SORT[id];
+      SORT[id] = (cur && cur.col === col) ? {col: col, dir: -cur.dir} : {col: col, dir: -1};
+      render();
+    };
+  });
+
+  document.getElementById("meta").innerHTML =
+    "累積 <b>" + BOARD.tradingDays + "</b> 個交易日";
+  document.getElementById("hint").textContent =
+    "數字單位為張。紅買綠賣。「連5買」代表已連續 5 個交易日買超 —— 單日進出可能只是調節，連續才是明確動作。點欄位標題可排序。";
+}
+
+function setNav(){
+  var i = IDX.dates.indexOf(CUR);
+  document.getElementById("prev").disabled = i <= 0;
+  document.getElementById("next").disabled = i < 0 || i >= IDX.dates.length - 1;
+  document.getElementById("dateSel").value = CUR;
+}
+
+function load(date){
+  CUR = date;
+  setNav();
+  try{ localStorage.setItem("lastDate", date); }catch(e){}
+  fetch("data/board/" + date + ".json", {cache: "no-cache"})
+    .then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
+    .then(function(j){ BOARD = j; render(); window.scrollTo(0, 0); })
+    .catch(function(){
+      document.getElementById("grid").innerHTML =
+        '<div class="state">這一天的資料載入失敗，換個日期試試。</div>';
+    });
+}
+
+function boot(){
+  fetch("data/index.json", {cache: "no-cache"})
+    .then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
+    .then(function(j){
+      IDX = j;
+      if(!IDX.dates || !IDX.dates.length) throw new Error("empty");
+      var sel = document.getElementById("dateSel");
+      sel.innerHTML = IDX.dates.slice().reverse().map(function(d){
+        return '<option value="' + d + '">' + d + '</option>';
+      }).join("");
+      sel.onchange = function(){ load(sel.value); };
+      document.getElementById("prev").onclick = function(){
+        var i = IDX.dates.indexOf(CUR); if(i > 0) load(IDX.dates[i-1]);
+      };
+      document.getElementById("next").onclick = function(){
+        var i = IDX.dates.indexOf(CUR); if(i < IDX.dates.length-1) load(IDX.dates[i+1]);
+      };
+      document.getElementById("latest").onclick = function(){
+        load(IDX.dates[IDX.dates.length-1]);
+      };
+      var start = IDX.dates[IDX.dates.length - 1];
+      try{
+        var saved = localStorage.getItem("lastDate");
+        if(saved && IDX.dates.indexOf(saved) >= 0) start = saved;
+      }catch(e){}
+      load(start);
+    })
+    .catch(function(){
+      document.getElementById("grid").innerHTML =
+        '<div class="state">還沒有任何資料。<br><br>' +
+        '請到 GitHub 的 Actions 分頁，手動執行一次「每日更新法人籌碼」，<br>' +
+        '並在 backfill_days 欄位填入 130。</div>';
+    });
+}
+
+Array.prototype.forEach.call(document.querySelectorAll(".tab"), function(t){
+  t.onclick = function(){
+    Array.prototype.forEach.call(document.querySelectorAll(".tab"), function(x){
+      x.classList.remove("on");
+    });
+    t.classList.add("on");
+    VIEW = t.dataset.v;
+    render();
+  };
+});
+
+boot();
+</script>
+</body>
+</html>
